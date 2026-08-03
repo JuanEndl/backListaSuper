@@ -2,8 +2,10 @@
   "name": "backlistasuper",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "backListaSuper.js",
   "scripts": {
+    "dev": "nodemon backListaSuper.js",
+    "start": "node backListaSuper.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
