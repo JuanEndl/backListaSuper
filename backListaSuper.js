@@ -5,14 +5,17 @@ const cors = require("cors");
 const mysql = require("mysql2");
 
 const app = express();
-
 const PORT = process.env.PORT || 5000;
 
+// =========================
 // Middlewares
+// =========================
 app.use(cors());
 app.use(express.json());
 
+// =========================
 // Conexión a MySQL
+// =========================
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -23,7 +26,9 @@ const db = mysql.createPool({
   queueLimit: 0,
 });
 
-// Esperar a que MySQL esté listo
+// =========================
+// Esperar conexión a MySQL
+// =========================
 const waitForDb = () => {
   return new Promise((resolve) => {
     const check = () => {
@@ -41,11 +46,16 @@ const waitForDb = () => {
   });
 };
 
-// Obtener todos los productos
+// =========================
+// GET - Obtener productos
+// =========================
 app.get("/productos", (req, res) => {
-  db.query("SELECT * FROM productos", (err, results) => {
+  const query = "SELECT * FROM productos ORDER BY id";
+
+  db.query(query, (err, results) => {
     if (err) {
       console.error(err);
+
       return res.status(500).json({
         error: "Error al consultar la base de datos",
       });
@@ -55,12 +65,44 @@ app.get("/productos", (req, res) => {
   });
 });
 
-//TODO HACER EL POST 
+// =========================
+// POST - Agregar producto
+// =========================
+app.post("/productos", (req, res) => {
+  const { producto } = req.body;
 
+  if (!producto || !producto.trim()) {
+    return res.status(400).json({
+      error: "Debe ingresar un producto",
+    });
+  }
 
+  const query = `
+    INSERT INTO productos (producto)
+    VALUES (?)
+  `;
+
+  db.query(query, [producto], (err, result) => {
+    if (err) {
+      console.error(err);
+
+      return res.status(500).json({
+        error: "Error al agregar el producto",
+      });
+    }
+
+    res.status(201).json({
+      mensaje: "Producto agregado correctamente",
+      id: result.insertId,
+    });
+  });
+});
+
+// =========================
 // Iniciar servidor
+// =========================
 waitForDb().then(() => {
-  console.log("MySQL está listo.");
+  console.log("MySQL conectado correctamente.");
 
   app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
