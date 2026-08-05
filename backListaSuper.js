@@ -50,7 +50,7 @@ const waitForDb = () => {
 // GET - Obtener productos
 // =========================
 app.get("/productos", (req, res) => {
-  const query = "SELECT * FROM productos ORDER BY id";
+  const query = "SELECT * FROM productos WHERE activo = TRUE ORDER BY id";
 
   db.query(query, (err, results) => {
     if (err) {
@@ -97,6 +97,50 @@ app.post("/productos", (req, res) => {
     });
   });
 });
+
+
+// =========================
+// DELETE - Baja lógica de un producto
+// =========================
+app.delete("/productos/:id", (req, res) => {
+  const { id } = req.params;
+
+  const query = "UPDATE productos SET activo = FALSE WHERE id = ?";
+
+  db.query(query, [id], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({
+        error: "Error al eliminar el producto",
+      });
+    }
+
+    res.json({
+      mensaje: "Producto eliminado correctamente",
+    });
+  });
+});
+
+// =========================
+// DELETE - Finalizar compra
+// =========================
+app.delete("/productos", (req, res) => {
+  const query = "UPDATE productos SET activo = FALSE WHERE activo = TRUE";
+
+  db.query(query, (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({
+        error: "Error al finalizar la compra",
+      });
+    }
+
+    res.json({
+      mensaje: "Compra finalizada correctamente",
+    });
+  });
+});
+
 
 // =========================
 // Iniciar servidor
