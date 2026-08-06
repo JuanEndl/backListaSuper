@@ -3,19 +3,44 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
+const server = http.createServer(app);
+
 const PORT = process.env.PORT || 5000;
 
 // =========================
 // Middlewares
 // =========================
+
 app.use(cors());
 app.use(express.json());
 
 // =========================
+// Socket.IO
+// =========================
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "DELETE"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("Cliente conectado:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("Cliente desconectado:", socket.id);
+  });
+});
+
+// =========================
 // Conexión a MySQL
 // =========================
+
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -29,6 +54,7 @@ const db = mysql.createPool({
 // =========================
 // Esperar conexión a MySQL
 // =========================
+
 const waitForDb = () => {
   return new Promise((resolve) => {
     const check = () => {
@@ -49,8 +75,10 @@ const waitForDb = () => {
 // =========================
 // GET - Obtener productos
 // =========================
+
 app.get("/productos", (req, res) => {
-  const query = "SELECT * FROM productos WHERE activo = TRUE ORDER BY id";
+  const query =
+    "SELECT * FROM productos WHERE activo = TRUE ORDER BY id";
 
   db.query(query, (err, results) => {
     if (err) {
@@ -68,6 +96,7 @@ app.get("/productos", (req, res) => {
 // =========================
 // POST - Agregar producto
 // =========================
+
 app.post("/productos", (req, res) => {
   const { producto } = req.body;
 
@@ -91,6 +120,9 @@ app.post("/productos", (req, res) => {
       });
     }
 
+    io.emit("actualizarLista");
+    console.log(">>> Evento actualizarLista enviado (POST)");
+
     res.status(201).json({
       mensaje: "Producto agregado correctamente",
       id: result.insertId,
@@ -98,22 +130,30 @@ app.post("/productos", (req, res) => {
   });
 });
 
+// =========================
+// DELETE - Baja lógica
+// =========================
 
-// =========================
-// DELETE - Baja lógica de un producto
-// =========================
 app.delete("/productos/:id", (req, res) => {
   const { id } = req.params;
 
-  const query = "UPDATE productos SET activo = FALSE WHERE id = ?";
+  const query = `
+    UPDATE productos
+    SET activo = FALSE
+    WHERE id = ?
+  `;
 
   db.query(query, [id], (err) => {
     if (err) {
       console.error(err);
+
       return res.status(500).json({
         error: "Error al eliminar el producto",
       });
     }
+
+    io.emit("actualizarLista");
+    console.log(">>> Evento actualizarLista enviado (DELETE)");
 
     res.json({
       mensaje: "Producto eliminado correctamente",
@@ -124,16 +164,25 @@ app.delete("/productos/:id", (req, res) => {
 // =========================
 // DELETE - Finalizar compra
 // =========================
+
 app.delete("/productos", (req, res) => {
-  const query = "UPDATE productos SET activo = FALSE WHERE activo = TRUE";
+  const query = `
+    UPDATE productos
+    SET activo = FALSE
+    WHERE activo = TRUE
+  `;
 
   db.query(query, (err) => {
     if (err) {
       console.error(err);
+
       return res.status(500).json({
         error: "Error al finalizar la compra",
       });
     }
+
+    io.emit("actualizarLista");
+    console.log(">>> Evento actualizarLista enviado (FINALIZAR)");
 
     res.json({
       mensaje: "Compra finalizada correctamente",
@@ -141,14 +190,14 @@ app.delete("/productos", (req, res) => {
   });
 });
 
-
 // =========================
 // Iniciar servidor
 // =========================
+
 waitForDb().then(() => {
   console.log("MySQL conectado correctamente.");
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
   });
 });
