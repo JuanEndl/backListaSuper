@@ -131,6 +131,36 @@ app.post("/productos", (req, res) => {
 });
 
 // =========================
+// PUT - Marcar / desmarcar producto
+// =========================
+app.put("/productos/:id", (req, res) => {
+    const { id } = req.params;
+    const { comprado } = req.body;
+
+    const query = "UPDATE productos SET comprado = ? WHERE id = ?";
+
+    db.query(query, [comprado, id], (err) => {
+        if (err) {
+            console.error(err);
+
+            return res.status(500).json({
+                error: "Error al actualizar el producto",
+            });
+        }
+
+        // Avisar a todos los navegadores
+        io.emit("actualizarLista");
+
+        res.json({
+            mensaje: "Producto actualizado correctamente",
+        });
+    });
+});
+
+
+
+
+// =========================
 // DELETE - Baja lógica
 // =========================
 
