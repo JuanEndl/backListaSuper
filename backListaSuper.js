@@ -145,6 +145,7 @@ app.put("/productos/:id", (req, res) => {
 
             return res.status(500).json({
                 error: "Error al actualizar el producto",
+                
             });
         }
 
@@ -167,11 +168,7 @@ app.put("/productos/:id", (req, res) => {
 app.delete("/productos/:id", (req, res) => {
   const { id } = req.params;
 
-  const query = `
-    UPDATE productos
-    SET activo = FALSE
-    WHERE id = ?
-  `;
+  const query = "UPDATE productos SET activo = FALSE, fecha_eliminado = CURRENT_TIMESTAMP WHERE id = ? ";
 
   db.query(query, [id], (err) => {
     if (err) {
@@ -196,11 +193,7 @@ app.delete("/productos/:id", (req, res) => {
 // =========================
 
 app.delete("/productos", (req, res) => {
-  const query = `
-    UPDATE productos
-    SET activo = FALSE
-    WHERE activo = TRUE
-  `;
+  const query = "UPDATE productos SET activo = FALSE, fecha_eliminado = CURRENT_TIMESTAMP WHERE activo = TRUE";
 
   db.query(query, (err) => {
     if (err) {
@@ -211,6 +204,7 @@ app.delete("/productos", (req, res) => {
       });
     }
 
+    // actualiza los navegadores en tiempo real
     io.emit("actualizarLista");
     console.log(">>> Evento actualizarLista enviado (FINALIZAR)");
 
