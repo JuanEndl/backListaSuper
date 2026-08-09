@@ -162,7 +162,7 @@ app.put("/productos/:id", (req, res) => {
 
 
 // =========================
-// DELETE - Baja lógica
+// DELETE - individual de productos con baja lógica
 // =========================
 
 app.delete("/productos/:id", (req, res) => {
@@ -189,7 +189,7 @@ app.delete("/productos/:id", (req, res) => {
 });
 
 // =========================
-// DELETE - Finalizar compra
+// DELETE - Finalizar compra de todos los productos con baja logica
 // =========================
 
 app.delete("/productos", (req, res) => {
