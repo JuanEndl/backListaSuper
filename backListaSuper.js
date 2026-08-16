@@ -27,7 +27,8 @@ const io = new Server(server, {
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      "http://192.168.1.83:5174"
+      "http://192.168.1.83:5174",
+      "https://karulolista.duckdns.org"
     ],
     methods: ["GET", "POST", "DELETE"],
   },
